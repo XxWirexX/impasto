@@ -14,6 +14,7 @@
 -- require in its own scope: an error in one module will not break the rest.
 
 require("modules.monitors")
+require("modules.plugins")    -- nixos: plugins built by nixos-config
 require("modules.autostart")
 require("modules.env")
 require("modules.look")
