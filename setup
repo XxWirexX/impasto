@@ -1340,26 +1340,37 @@ verb_camera() {
         fail 'no camera: the effects need a webcam'
     fi
     say "camera   $camera"
-    kernel=$(cat "/usr/lib/modules/$(uname -r)/pkgbase" 2>/dev/null) || kernel=linux
-    headers=$kernel-headers
-    act sudo pacman -S --needed "${yes[@]}" v4l2loopback-dkms "$headers" python-numpy python-opencv \
-        || refuse 'the virtual camera was not installed' || return
-    if ! python3 -c 'import mediapipe' 2>/dev/null; then
-        aur_helper || refuse 'MediaPipe needs an AUR helper' || return
-        act "$HELPER" -S --needed "${yes[@]}" python-mediapipe-bin \
-            || refuse 'MediaPipe was not installed' || return
-        say 'installed MediaPipe'
-    fi
-    # exclusive_caps: listed as a camera only while something writes to it,
-    # which camera.py does from the moment the shell starts it.
-    act sudo install -Dm644 /dev/stdin /etc/modprobe.d/impasto-camera.conf <<<'options v4l2loopback video_nr=10 card_label="impasto camera" exclusive_caps=1' \
-        && act sudo install -Dm644 /dev/stdin /etc/modules-load.d/impasto-camera.conf <<<'v4l2loopback' \
-        || refuse 'the module options were not written' || return
-    if (( ! DRY )) && ! grep -qx 'impasto camera' /sys/class/video4linux/*/name 2>/dev/null; then
-        if [[ -d /sys/module/v4l2loopback ]]; then
-            say 'note     v4l2loopback is already loaded with other options; the camera appears after a reboot'
-        else
-            act sudo modprobe v4l2loopback || say 'note     the module did not load now; it loads with the next boot'
+    if [[ -e /etc/NIXOS ]]; then
+        # nixos: v4l2loopback, its options and the Python modules (cv2,
+        # MediaPipe, numpy) come from nixos-config; only the models are
+        # fetched here.
+        python3 -c 'import cv2, mediapipe, numpy' 2>/dev/null \
+            || refuse 'cv2, mediapipe or numpy is missing: rebuild nixos-config' || return
+        if (( ! DRY )) && ! grep -qx 'impasto camera' /sys/class/video4linux/*/name 2>/dev/null; then
+            say 'note     the virtual camera appears after a reboot (v4l2loopback)'
+        fi
+    else
+        kernel=$(cat "/usr/lib/modules/$(uname -r)/pkgbase" 2>/dev/null) || kernel=linux
+        headers=$kernel-headers
+        act sudo pacman -S --needed "${yes[@]}" v4l2loopback-dkms "$headers" python-numpy python-opencv \
+            || refuse 'the virtual camera was not installed' || return
+        if ! python3 -c 'import mediapipe' 2>/dev/null; then
+            aur_helper || refuse 'MediaPipe needs an AUR helper' || return
+            act "$HELPER" -S --needed "${yes[@]}" python-mediapipe-bin \
+                || refuse 'MediaPipe was not installed' || return
+            say 'installed MediaPipe'
+        fi
+        # exclusive_caps: listed as a camera only while something writes to it,
+        # which camera.py does from the moment the shell starts it.
+        act sudo install -Dm644 /dev/stdin /etc/modprobe.d/impasto-camera.conf <<<'options v4l2loopback video_nr=10 card_label="impasto camera" exclusive_caps=1' \
+            && act sudo install -Dm644 /dev/stdin /etc/modules-load.d/impasto-camera.conf <<<'v4l2loopback' \
+            || refuse 'the module options were not written' || return
+        if (( ! DRY )) && ! grep -qx 'impasto camera' /sys/class/video4linux/*/name 2>/dev/null; then
+            if [[ -d /sys/module/v4l2loopback ]]; then
+                say 'note     v4l2loopback is already loaded with other options; the camera appears after a reboot'
+            else
+                act sudo modprobe v4l2loopback || say 'note     the module did not load now; it loads with the next boot'
+            fi
         fi
     fi
     local dir=${XDG_DATA_HOME:-$HOME/.local/share}/impasto/camera file

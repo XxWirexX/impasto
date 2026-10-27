@@ -57,6 +57,12 @@ PIDFILE = RUNTIME / "serve.pid"
 SNAP = RUNTIME / "snap.request"
 MODELS = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "impasto/camera"
 EMOJI_FONT = "/usr/share/fonts/noto/NotoColorEmoji.ttf"
+if not os.path.isfile(EMOJI_FONT):  # nixos: no /usr/share, ask fontconfig
+    try:
+        EMOJI_FONT = subprocess.run(["fc-match", "-f", "%{file}", "Noto Color Emoji"],
+                                    capture_output=True, text=True).stdout.strip() or EMOJI_FONT
+    except OSError:
+        pass
 MODEL_FILES = ["face_landmarker.task", "gesture_recognizer.task", "selfie_segmenter.tflite"]
 
 # V4L2, from linux/videodev2.h and v4l2loopback.c.
