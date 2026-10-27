@@ -1157,14 +1157,26 @@ verb_spotify() {
     section spotify
     local config=${XDG_CONFIG_HOME:-$HOME/.config}
     command -v spicetify >/dev/null || refuse 'spicetify is not installed' || return
-    [[ -f $config/spotify/prefs ]] \
+    local prefs=$config/spotify/prefs
+    if [[ -e /etc/NIXOS ]]; then
+        # nixos: the store is read-only, so spicetify patches the Flatpak
+        # Spotify installed for this user, which is writable.
+        local flatpak=$HOME/.local/share/flatpak/app/com.spotify.Client/x86_64/stable/active/files/extra/share/spotify
+        prefs=$HOME/.var/app/com.spotify.Client/config/spotify/prefs
+        [[ -d $flatpak ]] \
+            || refuse 'install Spotify with Flatpak first: flatpak install --user flathub com.spotify.Client' || return
+        [[ -f $prefs ]] || refuse 'open Spotify once first: spicetify needs the settings it writes' || return
+        act spicetify config spotify_path "$flatpak" prefs_path "$prefs" >/dev/null \
+            || refuse 'spicetify could not be pointed at the Flatpak' || return
+    fi
+    [[ -f $prefs ]] \
         || refuse 'open Spotify once first: spicetify needs the settings it writes' || return
     [[ -f $config/spicetify/Themes/impasto/color.ini ]] \
         || refuse 'no palette for Spotify yet: the shell writes one when it next themes the desk' || return
     if [[ -n $SOFT ]] && pgrep -x spotify >/dev/null; then
         refuse 'close Spotify first: patching it restarts it' || return
     fi
-    if [[ ! -w /opt/spotify || ! -w /opt/spotify/Apps ]]; then
+    if [[ ! -e /etc/NIXOS ]] && [[ ! -w /opt/spotify || ! -w /opt/spotify/Apps ]]; then
         if (( ! DRY )) && ! ask 'spicetify patches /opt/spotify — make it writable (sudo chmod a+wr)?'; then
             refuse '/opt/spotify is not writable: sudo chmod a+wr -R /opt/spotify' || return
         fi

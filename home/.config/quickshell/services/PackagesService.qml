@@ -216,6 +216,12 @@ Singleton {
     }
 
     function upgrade(): void {
+        // nixos: an update is the flake's inputs, then a rebuild
+        if (UpdatesService.tool === "nix") {
+            root.open(["bash", "-c", "flake=\"${IMPASTO_FLAKE:-$HOME/nixos-config}\"; "
+                + "nix flake update --flake \"$flake\" && sudo nixos-rebuild switch --flake \"$flake\""])
+            return
+        }
         root.open(root.helper !== ""
             ? [root.helper, "-Syu"]
             : ["sudo", "pacman", "-Syu"])

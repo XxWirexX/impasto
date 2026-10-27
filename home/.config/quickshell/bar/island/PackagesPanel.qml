@@ -409,6 +409,15 @@ ColumnLayout {
             Layout.fillWidth: true
             elide: Text.ElideRight
             text: {
+                if (root.view === "updates" && UpdatesService.tool === "nix") {
+                    // nixos: flake inputs, not packages
+                    const parts = [`${UpdatesService.count} input${UpdatesService.count === 1 ? "" : "s"} of nixos-config behind`]
+                    if (UpdatesService.checking)
+                        parts.push("checking…")
+                    else if (UpdatesService.age !== "")
+                        parts.push(`checked ${UpdatesService.age}`)
+                    return parts.join(" · ")
+                }
                 if (root.view === "updates") {
                     const aur = UpdatesService.updates.filter(row => row.source === "aur").length
                     // The fallback reads the last-synced database, so zero

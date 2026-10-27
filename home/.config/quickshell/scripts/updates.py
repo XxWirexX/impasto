@@ -123,7 +123,72 @@ def aur():
             and newer(remote[name], mine[name])]
 
 
+# ── NIXOS ───────────────────────────────────────────────────────────────────
+#
+# nixos: there is no pacman. What an update changes is the flake: each input
+# of nixos-config locked to a commit its branch has since moved past. An input
+# pinned to a tag (Hyprland, Quickshell) is up to date by definition. Read
+# with `git ls-remote`, so no token and no API rate limit.
+
+FLAKE = os.path.expanduser(os.environ.get("IMPASTO_FLAKE") or "~/nixos-config")
+
+
+def remote_head(owner, repo, ref):
+    """The commit `ref` (a branch, a tag, or HEAD) points to on GitHub."""
+    url = f"https://github.com/{owner}/{repo}"
+    wanted = [ref] if ref == "HEAD" else [f"refs/heads/{ref}", f"refs/tags/{ref}^{{}}", f"refs/tags/{ref}"]
+    result = run(["git", "ls-remote", url, *wanted], timeout=20)
+    if result is None or result.returncode != 0:
+        return None
+    found = dict(reversed(line.split("\t", 1)) for line in result.stdout.splitlines() if "\t" in line)
+    for name in wanted:
+        if name in found:
+            return found[name]
+    return None
+
+
+def flake_inputs():
+    """Inputs behind their branch, or None when the lock cannot be read."""
+    try:
+        with open(os.path.join(FLAKE, "flake.lock"), encoding="utf-8") as source:
+            lock = json.load(source)
+    except (OSError, ValueError) as error:
+        print(f"No flake.lock in {FLAKE}: {error}", file=sys.stderr)
+        return None
+    nodes = lock.get("nodes", {})
+    rows, checks = [], []
+    for name, key in nodes.get(lock.get("root", "root"), {}).get("inputs", {}).items():
+        if not isinstance(key, str):
+            continue  # follows another input: that one is checked
+        node = nodes.get(key, {})
+        original, locked = node.get("original", {}), node.get("locked", {})
+        if original.get("type") != "github" or not locked.get("rev"):
+            continue
+        checks.append((name, original["owner"], original["repo"],
+                       original.get("ref") or "HEAD", locked["rev"]))
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        heads = list(pool.map(lambda c: remote_head(c[1], c[2], c[3]), checks))
+    if checks and all(head is None for head in heads):
+        return None  # offline: no answer is not "up to date"
+    for (name, owner, repo, ref, rev), head in zip(checks, heads):
+        if head and head != rev:
+            rows.append({"name": name, "from": rev[:7], "to": head[:7], "source": "flake"})
+    return rows
+
+
 def main():
+    if not shutil.which("pacman") and os.path.exists("/etc/NIXOS"):
+        rows = flake_inputs()
+        if rows is None:
+            print(json.dumps({"available": False}))
+            return
+        print(json.dumps({
+            "available": True, "tool": "nix", "aur": False, "count": len(rows),
+            "packages": [row["name"] for row in rows[:LISTED]], "updates": rows,
+        }))
+        return
     tool, rows = repositories()
     if rows is None:
         print("Neither checkupdates nor pacman answered", file=sys.stderr)
