@@ -1526,7 +1526,7 @@ def write_gtk_theme(colors):
 
 def icon_source_root():
     """The Papirus-Dark directory, searched in XDG data order, or None."""
-    for base in (XDG_DATA_HOME, "/usr/local/share", "/usr/share"):
+    for base in (XDG_DATA_HOME, "/run/current-system/sw/share", "/usr/local/share", "/usr/share"):  # nixos
         root = os.path.join(base, "icons", ICON_SOURCE_THEME)
         if os.path.isdir(os.path.join(root, ICON_SWATCH_SIZE, "places")):
             return root

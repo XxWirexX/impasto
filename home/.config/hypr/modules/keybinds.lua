@@ -235,8 +235,10 @@ end
 -- Shared, a number brings its workspace to the screen you are on rather than
 -- taking you to the screen it is on: `on_current_monitor` swaps the two
 -- screens' workspaces where it has to. Per screen, it is this screen's own.
+-- nixos: AZERTY puts the digits on SHIFT, so the binds name the physical
+-- keys (keycodes 10 to 19, the row 1 to 0) and work with SHIFT too.
 for i = 1, 10 do
-    local key = i % 10  -- 10 maps to the 0 key
+    local key = "code:" .. (9 + i)
     bind(mainMod .. " + " .. key,         to_workspace(i),
          { description = "Workspaces · Go to workspace " .. i })
     bind(mainMod .. " + SHIFT + " .. key, move_to_workspace(i),
@@ -346,6 +348,7 @@ bind(mainMod .. " + CTRL + R",  hl.dsp.exec_cmd("pkill -x quickshell; pkill -x q
 
 -- · global shortcuts registered by the shell
 bind(mainMod .. " + Space",     hl.dsp.global("quickshell:launcher"),   { description = "Shell · Open the launcher" })
+bind(mainMod .. " + D",         hl.dsp.global("quickshell:launcher"),   { description = "Shell · Open the launcher, from D" })  -- nixos
 bind(mainMod .. " + A",         hl.dsp.global("quickshell:controls"),   { description = "Shell · Open the control centre" })
 bind(mainMod .. " + TAB",       hl.dsp.global("quickshell:overview"),   { description = "Shell · Open the workspace overview" })
 bind(mainMod .. " + comma",     hl.dsp.global("quickshell:settings"),   { description = "Shell · Open settings" })

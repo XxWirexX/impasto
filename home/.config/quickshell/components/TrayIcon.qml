@@ -27,7 +27,7 @@ Item {
     }
 
     readonly property string panelIcon: root.named !== ""
-        ? `file:///usr/share/icons/Papirus-Dark/22x22/panel/${root.named}.svg` : ""
+        ? `file:///run/current-system/sw/share/icons/Papirus-Dark/22x22/panel/${root.named}.svg` : ""  // nixos
 
     property bool fallback: false
     onIconChanged: root.fallback = false

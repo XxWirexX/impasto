@@ -38,7 +38,7 @@ Singleton {
     // It has been answered, either way; the island closes.
     signal settled()
 
-    readonly property string fallback: "/usr/lib/polkit-kde-authentication-agent-1"
+    readonly property string fallback: "/run/current-system/sw/libexec/polkit-kde-authentication-agent-1"  // nixos
     readonly property int tries: 3
     property int tried: 0
 

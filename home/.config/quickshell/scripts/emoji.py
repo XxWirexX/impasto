@@ -28,8 +28,10 @@ import sys
 import unicodedata
 import xml.etree.ElementTree as ElementTree
 
-SOURCE = "/usr/share/unicode/emoji/emoji-test.txt"
-ANNOTATIONS = "/usr/share/unicode/cldr/common/annotations"
+# nixos: the system profile when it has them, otherwise Arch's /usr/share.
+SHARE = "/run/current-system/sw/share" if os.path.isdir("/run/current-system/sw/share/unicode") else "/usr/share"
+SOURCE = SHARE + "/unicode/emoji/emoji-test.txt"
+ANNOTATIONS = SHARE + "/unicode/cldr/common/annotations"
 
 TONES = [chr(code) for code in range(0x1F3FB, 0x1F400)]
 VARIATION = "️"
@@ -66,7 +68,7 @@ def annotations(language):
 def countries(language):
     """Flag glyph -> country name in the language, from iso-codes."""
     try:
-        with open("/usr/share/iso-codes/json/iso_3166-1.json", encoding="utf-8") as source:
+        with open(SHARE + "/iso-codes/json/iso_3166-1.json", encoding="utf-8") as source:
             table = json.load(source)["3166-1"]
     except (OSError, ValueError, KeyError):
         return {}

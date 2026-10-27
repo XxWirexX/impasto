@@ -58,6 +58,7 @@ OPTIONS = [
 
 # The xkb layout list. evdev is what Hyprland uses; base is its older name.
 XKB_RULES = (
+    "/run/current-system/sw/share/X11/xkb/rules/evdev.lst",  # nixos
     "/usr/share/X11/xkb/rules/evdev.lst",
     "/usr/share/X11/xkb/rules/base.lst",
 )

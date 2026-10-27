@@ -16,23 +16,16 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("awww-daemon")  -- · wallpaper
 end)
 
--- · plugins (see input.lua, look.lua), built by `./setup plugins`
+-- · plugins (see input.lua, look.lua)
 --
--- Only reload once something is built: otherwise hyprpm shows a headers
--- notification on every login. Its store is per user under /var/cache.
---
--- A terminal on `./setup plugins`, which asks for the password hyprpm needs,
--- when an install run outside the session left them to this one, or when
--- they no longer load because Hyprland was updated under them. `hyprpm
--- reload` reports success either way; the plugin list is what says.
-local apps = require("modules.programs")
+-- nixos: hyprpm cannot build plugins on NixOS. They are built by Nix against
+-- this exact Hyprland and loaded from nixos-config, so nothing runs here.
+
+-- · keyring: KWallet, unlocked with the login password as under Plasma, so
+-- · gh, browsers and editors find their credentials. nixos: the path is the
+-- · system profile's (environment.pathsToLink has /libexec).
 hl.on("hyprland.start", function()
-    hl.exec_cmd('s="${XDG_STATE_HOME:-$HOME/.local/state}/impasto"; '
-        .. 'if test -f "$s/plugins-pending"; then r=$(cat "$s/plugins-pending"); '
-        .. 'elif test -d "/var/cache/hyprpm/$USER" && { hyprpm reload; '
-        .. 'hyprctl plugin list | grep -q "^no plugins loaded" && hyprpm list | grep -q true; }; then r=$(sed -n 3p "$s/version"); '
-        .. 'else exit 0; fi; '
-        .. 'test -x "$r/setup" && ' .. apps.terminal .. ' --hold "$r/setup" plugins')
+    hl.exec_cmd("/run/current-system/sw/libexec/pam_kwallet_init")
 end)
 
 -- · polkit agent
