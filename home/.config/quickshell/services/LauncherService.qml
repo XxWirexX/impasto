@@ -50,6 +50,9 @@ QtObject {
         { id: "emoji",     prefix: SettingsService.launcherPrefix("emoji"),
           label: "Emoji",     icon: "󰇲",
           hint: "Copy an emoji",       empty: "No emoji by that name" },
+        { id: "effects",   prefix: SettingsService.launcherPrefix("effects"),
+          label: "Effects",   icon: "󰏘",
+          hint: "Filter the wallpaper", empty: "No effect by that name" },
         { id: "apps",      prefix: "",  label: "Apps",      icon: "󰀻",
           hint: "Search applications",
           empty: `No application matches. Type ${SettingsService.launcherPrefix("desk")} for what the shell itself can do.` }
@@ -232,6 +235,8 @@ QtObject {
             return root.clipboard(term)
         case "emoji":
             return root.emoji(term)
+        case "effects":
+            return EffectService.search(term)
         }
 
         return root.rank(term).slice(0, root.maxResults)
@@ -454,6 +459,8 @@ QtObject {
             ClipboardService.copy(entry.id)
         else if (entry.kind === "emoji")
             EmojiService.copy(entry.item)
+        else if (entry.kind === "effect")
+            EffectService.apply(entry.id)
         // `panel` and `mode` entries are handled by the launcher panel: the
         // service does not know about the island, and a mode row keeps the
         // launcher open.

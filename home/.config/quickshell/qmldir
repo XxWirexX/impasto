@@ -57,6 +57,7 @@ singleton VmService          1.0 services/VmService.qml
 singleton ServersService     1.0 services/ServersService.qml
 singleton ScreenTimeService  1.0 services/ScreenTimeService.qml
 singleton CameraService      1.0 services/CameraService.qml
+singleton EffectService      1.0 services/EffectService.qml
 singleton TrayService        1.0 services/TrayService.qml
 singleton PrivacyService     1.0 services/PrivacyService.qml
 singleton SunsetService      1.0 services/SunsetService.qml

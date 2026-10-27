@@ -521,6 +521,12 @@ ShellRoot {
         onPressed: root.openLauncherOn("emoji")
     }
 
+    GlobalShortcut {
+        name: "effects"
+        description: "Open the launcher on the wallpaper effects"
+        onPressed: root.openLauncherOn("effects")
+    }
+
     // hyprpicker freezes a screenshot of the screen, so an open panel has to
     // finish closing before it starts.
     GlobalShortcut {

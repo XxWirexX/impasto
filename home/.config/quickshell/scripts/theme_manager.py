@@ -45,6 +45,10 @@ ANIMATED_DIR = os.path.join(WALLPAPERS_DIR, "animated")
 # One frame of each video, for the palette and for everything that draws the
 # wallpaper as a picture (the lock, the overview, the arranging desk).
 POSTERS_DIR = os.path.join(XDG_CACHE_HOME, "impasto", "posters")
+# The wallpaper with an effect on it, and which painting each one came from,
+# so a second effect starts again from the painting, not from the first.
+EFFECTS_DIR = os.path.join(XDG_CACHE_HOME, "impasto", "effects")
+EFFECTS_INDEX = os.path.join(EFFECTS_DIR, "index.json")
 STATE_DIR = os.path.join(XDG_STATE_HOME, "quickshell")
 STATE_FILE = os.path.join(STATE_DIR, "state.json")
 TERMINAL_PALETTE_FILE = os.path.join(STATE_DIR, "kitty-palette.conf")
@@ -4037,6 +4041,90 @@ def restore_wallpaper():
     return 0
 
 
+# ── WALLPAPER EFFECTS ───────────────────────────────────────────────────────
+#
+# ImageMagick filters over the painting, after JaKooLit's Hyprland-Dots. The
+# result is an ordinary still, so the shell applies it like any wallpaper and
+# the palette follows. "none" answers the painting itself.
+
+WALLPAPER_EFFECTS = {
+    "bw":        ["-colorspace", "gray", "-sigmoidal-contrast", "10,40%"],
+    "blur":      ["-blur", "0x10"],
+    "charcoal":  ["-charcoal", "0x5"],
+    "edge":      ["-edge", "1"],
+    "emboss":    ["-emboss", "0x5"],
+    "negate":    ["-negate"],
+    "oil":       ["-paint", "4"],
+    "pixelate":  ["-scale", "5%", "-scale", "2000%"],
+    "posterize": ["-posterize", "4"],
+    "sepia":     ["-sepia-tone", "65%"],
+    "sharpen":   ["-sharpen", "0x5"],
+    "solarize":  ["-solarize", "80%"],
+    "vignette":  ["-background", "black", "-vignette", "0x3"],
+}
+
+
+def load_effects_index():
+    try:
+        with open(EFFECTS_INDEX, encoding="utf-8") as source:
+            index = json.load(source)
+        return index if isinstance(index, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def effect_source(path):
+    """The painting a wallpaper came from: itself, unless an effect made it."""
+    if os.path.dirname(os.path.abspath(path)) == EFFECTS_DIR:
+        return load_effects_index().get(os.path.abspath(path), path)
+    return path
+
+
+def make_effect(current, effect):
+    """Write the painting under `current` with `effect`; print its path."""
+    source = effect_source(current)
+    if effect == "none":
+        print(source)
+        return 0
+    arguments = WALLPAPER_EFFECTS.get(effect)
+    if arguments is None:
+        sys.stderr.write(f"Unknown effect: {effect}\n")
+        return 2
+    if not os.path.isfile(source):
+        sys.stderr.write(f"Wallpaper not found: {source}\n")
+        return 1
+    tool = shutil.which("magick") or shutil.which("convert")
+    if not tool:
+        sys.stderr.write("ImageMagick is not installed\n")
+        return 1
+
+    os.makedirs(EFFECTS_DIR, exist_ok=True)
+    key = hashlib.sha1(os.path.abspath(source).encode()).hexdigest()[:12]
+    output = os.path.join(EFFECTS_DIR, f"{key}-{effect}.jpg")
+    if not os.path.isfile(output) or os.path.getmtime(output) < os.path.getmtime(source):
+        partial = output + ".part.jpg"
+        try:
+            result = subprocess.run([tool, source, *arguments, "-quality", "92", partial],
+                                    capture_output=True, timeout=120)
+        except (OSError, subprocess.SubprocessError) as error:
+            sys.stderr.write(f"ImageMagick failed: {error}\n")
+            return 1
+        if result.returncode != 0:
+            sys.stderr.write(result.stderr.decode(errors="replace"))
+            return 1
+        os.replace(partial, output)
+
+    index = load_effects_index()
+    index[output] = os.path.abspath(source)
+    try:
+        with open(EFFECTS_INDEX, "w", encoding="utf-8") as target:
+            json.dump(index, target)
+    except OSError as error:
+        sys.stderr.write(f"Cannot record the effect: {error}\n")
+    print(output)
+    return 0
+
+
 def set_theme(theme_id):
     state = load_state()
     state["activeTheme"] = theme_id
@@ -4048,7 +4136,8 @@ def main():
                "set-wallpaper <path> [transition] | "
                "restore | extract-colors [path] | set-theme <id> | "
                "push-terminal-palette <json> | push-terminal-font <family> | "
-               "apply-vscodium [json] | apply-nautilus | apply-vesktop")
+               "apply-vscodium [json] | apply-nautilus | apply-vesktop | "
+               "make-effect <current> <effect>")
     if len(sys.argv) < 2:
         sys.stderr.write(f"Usage: theme_manager.py {actions}\n")
         sys.exit(1)
@@ -4074,6 +4163,8 @@ def main():
         sys.exit(0 if set_wallpaper(argument, transition) else 1)
     elif action == "restore":
         sys.exit(restore_wallpaper())
+    elif action == "make-effect" and argument and len(sys.argv) >= 4:
+        sys.exit(make_effect(argument, sys.argv[3]))
     elif action == "set-theme" and argument:
         set_theme(argument)
     elif action == "push-terminal-palette" and argument:

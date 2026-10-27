@@ -59,6 +59,7 @@ Singleton {
         { name: "camera",         label: "Camera effects",       description: "Shell · Open the camera effects" },
         { name: "clipboard",      label: "Clipboard history",    description: "Shell · Open the clipboard history" },
         { name: "emoji",          label: "Emoji",                description: "Shell · Pick an emoji" },
+        { name: "effects",        label: "Wallpaper effects",    description: "Shell · Filter the wallpaper" },
         { name: "picker",         label: "Colour picker",        description: "Shell · Pick a colour off the screen" },
         { name: "capture",        label: "Capture",              description: "Shell · Open the capture surface" },
         { name: "captureRegion",  label: "Capture a region",     description: "Shell · Capture a region" },

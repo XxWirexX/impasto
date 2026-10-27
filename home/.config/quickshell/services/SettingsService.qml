@@ -136,7 +136,7 @@ Singleton {
     // overrides keyed by mode id, so a new mode needs no new key.
     readonly property var launcherPrefixDefaults: ({
         calculate: "=", desk: ">", windows: "@", timer: "!", clipboard: "'",
-        emoji: ":"
+        emoji: ":", effects: "*"
     })
 
     function launcherPrefix(id: string): string {

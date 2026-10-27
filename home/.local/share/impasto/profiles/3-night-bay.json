@@ -256,7 +256,7 @@
       "Shell · Open the screen time": "SUPER + Y",
       "Shell · Open the camera effects": "SUPER + SHIFT + W",
       "Shell · Open the clipboard history": "SUPER + V",
-      "Shell · Pick an emoji": "SUPER + period",
+      "Shell · Pick an emoji": "SUPER + semicolon",
       "Shell · Pick a colour off the screen": "SUPER + SHIFT + C",
       "Shell · Open the capture surface": "SUPER + SHIFT + S",
       "Shell · Open the capture surface, from Print": "Print",
