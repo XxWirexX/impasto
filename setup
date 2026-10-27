@@ -1749,6 +1749,9 @@ main() {
         esac
         shift
     done
+    if [[ -z $verb && -e /etc/NIXOS ]]; then
+        fail 'on NixOS, run one command: cursors, camera, defaults, nautilus or check'  # nixos
+    fi
     if [[ -z $verb ]]; then interactive; exit 0; fi
     case $HELPER in
         ''|yay|paru) ;;
