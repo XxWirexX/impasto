@@ -31,6 +31,11 @@ import sys
 
 HELPER = "/usr/lib/impasto/avatar"
 POLICY = "/usr/share/polkit-1/actions/org.impasto.avatar.policy"
+# nixos: both come from nixos-config, through the system profile. pkexec is
+# given the helper's real path in the store, which is what the policy names.
+if not os.path.exists(HELPER) and os.path.exists("/run/current-system/sw/libexec/impasto/avatar"):
+    HELPER = os.path.realpath("/run/current-system/sw/libexec/impasto/avatar")
+    POLICY = "/run/current-system/sw/share/polkit-1/actions/org.impasto.avatar.policy"
 
 # The picture both screens get: square, and small enough for a login screen.
 SIDE = 256
