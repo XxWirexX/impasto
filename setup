@@ -1754,6 +1754,15 @@ main() {
         ''|yay|paru) ;;
         *) fail '--aur-helper takes yay or paru' ;;
     esac
+    # nixos: packages, system files, plugins and the home files' links come
+    # from nixos-config (impasto-system.nix, impasto.nix). These verbs would
+    # call pacman or copy over the links home-manager owns, so they stop here.
+    if [[ -e /etc/NIXOS ]]; then
+        case $verb in
+            install|update|uninstall|packages|sync|system|plugins|face|splash)
+                fail "$verb is for Arch; on NixOS it comes from nixos-config (rebuild). Here: cursors, camera, defaults, nautilus, check" ;;
+        esac
+    fi
     case $verb in install|update|uninstall) banner ;; esac
     if (( DRY )) && [[ -z ${IMPASTO_RELAUNCHED:-} ]]; then
         printf '  %sdry run — nothing on this machine is changed%s\n' "$MUTED" "$OFF"
